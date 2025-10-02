@@ -1,0 +1,10 @@
+# Dossiers créés par Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+.mypy_cache/
+
+# Fichiers de configuration spécifiques à l'OS
+.DS_Store
+Thumbs.db

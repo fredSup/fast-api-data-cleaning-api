@@ -1,0 +1,23 @@
+# 🧹 Data Cleaning API
+
+Une API REST (FastAPI) pour nettoyer des données tabulaires (CSV) :
+- Supprimer les doublons
+- Gérer les valeurs manquantes
+- Supprimer les valeurs aberrantes
+- Appliquer un nettoyage complet
+
+## 🚀 Fonctionnalités
+- **/deduplicate** → supprime les doublons
+- **/fill-missing** → remplace les valeurs manquantes par la médiane
+- **/remove-outliers** → enlève les valeurs aberrantes (revenu trop élevé, âge négatif)
+- **/clean-all** → applique toutes les règles
+
+## 📊 Exemple de données brutes
+```csv
+id,nom,age,revenu
+1,Dupont,25,3500
+2,Martin,,4200
+2,Martin,,4200
+3,Durand,-5,1000000
+4,Moreau,30,
+5,Dupuis,40,18000
