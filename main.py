@@ -5,7 +5,31 @@ import io
 from fastapi.responses import StreamingResponse 
 # import csv is not needed as pandas handles the conversion
 
+from fastapi.middleware.cors import CORSMiddleware 
+
 app = FastAPI(title="Data Cleaning API")
+
+
+# --- NOUVEAU BLOC DE CONFIGURATION CORS ---
+
+origins = [
+    "*", # Permet toutes les origines (simple pour le test)
+    # Si vous hébergez votre Frontend sur un site spécifique (ex: Netlify ou Vercel),
+    # vous DEVEZ remplacer "*" par l'URL exacte de votre Frontend :
+    # "https://fast-api-data-cleaning-api.onrender.com", 
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],    # Autorise toutes les méthodes HTTP (GET, POST, etc.)
+    allow_headers=["*"],    # Autorise tous les headers
+)
+
+# --- FIN DU BLOC CORS ---
+
+
 
 # Fonction utilitaire
 def load_csv(file: UploadFile):

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API de Nettoyage de Données</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f7f6;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #007bff;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .operation {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .operation h2 {
+            margin-top: 0;
+            color: #555;
+            font-size: 1.2em;
+        }
+        input[type="file"], button {
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            margin-left: 10px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        #message {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border-color: #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-color: #f5c6cb;
+        }
+        .loading {
+            background-color: #fff3cd;
+            color: #856404;
+            border-color: #ffeeba;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Microservice de Nettoyage CSV (Frontend JS)</h1>
+        
+        <div style="margin-bottom: 25px;">
+            <label for="csvFile">Sélectionnez le fichier CSV :</label>
+            <input type="file" id="csvFile" accept=".csv">
+        </div>
+
+        <div id="message"></div>
+
+        <div class="operation">
+            <h2>1. Déduplication (Statistiques JSON)</h2>
+            <p>Supprime les lignes dupliquées et retourne le nombre de lignes avant/après.</p>
+            <button onclick="cleanData('/deduplicate', 'json')">Exécuter DÉDUPLICATION</button>
+        </div>
+
+        <div class="operation">
+            <h2>2. Imputation des Manquants (Statistiques JSON)</h2>
+            <p>Remplace les valeurs manquantes numériques par la médiane (retourne le décompte).</p>
+            <button onclick="cleanData('/fill-missing', 'json')">Exécuter IMPUTATION</button>
+        </div>
+
+        <div class="operation">
+            <h2>3. Suppression des Aberrants (Statistiques JSON)</h2>
+            <p>Applique la règle `revenu < 20000` et `age > 0`.</p>
+            <button onclick="cleanData('/remove-outliers', 'json')">Exécuter ABERRANTS</button>
+        </div>
+
+        <div class="operation" style="background-color: #e6f7ff; border-color: #b3d9ff;">
+            <h2>4. NETTOYAGE COMPLET (CSV TÉLÉCHARGEMENT)</h2>
+            <p>Effectue toutes les étapes (Déduplication -> Imputation -> Aberrants) et vous **téléchargez** le fichier corrigé.</p>
+            <button onclick="cleanData('/clean-all-and-download', 'csv')" style="background-color: #007bff;">Exécuter TOUT & TÉLÉCHARGER</button>
+        </div>
+        
+    </div>
+
+    <script>
+        // *** REMPLACER CETTE URL PAR L'URL PUBLIQUE DE VOTRE API RENDER ***
+        const API_BASE_URL = 'https://fast-api-data-cleaning-api.onrender.com'; 
+        // ***************************************************************
+
+        const messageDiv = document.getElementById('message');
+        const fileInput = document.getElementById('csvFile');
+
+        function showMessage(text, type) {
+            messageDiv.textContent = text;
+            messageDiv.className = type;
+            messageDiv.style.display = 'block';
+        }
+
+        async function cleanData(endpoint, responseType) {
+            const file = fileInput.files[0];
+
+            if (!file) {
+                showMessage("Veuillez sélectionner un fichier CSV avant d'exécuter l'opération.", 'error');
+                return;
+            }
+
+            showMessage("Traitement en cours...", 'loading');
+
+            const formData = new FormData();
+            formData.append('file', file); // 'file' est le nom du paramètre attendu par FastAPI
+
+            const fullUrl = API_BASE_URL + endpoint;
+
+            try {
+                const response = await fetch(fullUrl, {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Erreur HTTP ${response.status}: ${errorText}`);
+                }
+
+                // --- GESTION DES RÉPONSES ---
+                if (responseType === 'json') {
+                    // Les endpoints /deduplicate, /fill-missing, /remove-outliers renvoient du JSON
+                    const data = await response.json();
+                    let formattedData = JSON.stringify(data, null, 2);
+                    
+                    showMessage(`Opération réussie. Résultat JSON: ${formattedData}`, 'success');
+
+                } else if (responseType === 'csv') {
+                    // L'endpoint /clean-all-and-download renvoie le fichier CSV
+                    const blob = await response.blob();
+                    
+                    // Création d'un lien pour forcer le téléchargement
+                    const downloadUrl = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = downloadUrl;
+                    a.download = 'fichier_nettoye.csv';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(downloadUrl);
+                    
+                    showMessage("Nettoyage COMPLET terminé ! Le fichier CSV corrigé a été téléchargé. (Vérifiez votre dossier de téléchargement)", 'success');
+                }
+
+            } catch (error) {
+                console.error('Erreur lors de l\'appel API:', error);
+                showMessage(`Erreur lors de l'appel API: ${error.message}`, 'error');
+            }
+        }
+    </script>
+
+</body>
+</html>
