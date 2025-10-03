@@ -42,7 +42,7 @@ async def deduplicate(file: UploadFile = File(...)):
     before = len(df)
     df_clean = df.drop_duplicates()
     after = len(df_clean)
-    return {"Lignes_avant": before, "lignes_après": after}
+    return {"rows_before": before, "rows_after": after, "removed_count": before - after}
 
 @app.post("/fill-missing")
 async def fill_missing(file: UploadFile = File(...)):
@@ -50,7 +50,7 @@ async def fill_missing(file: UploadFile = File(...)):
     missing_before = df.isna().sum().to_dict()
     df_clean = df.fillna(df.median(numeric_only=True))
     missing_after = df_clean.isna().sum().to_dict()
-    return {"manquant_avant": missing_before, "manquant_après": missing_after}
+    return {"missing_before": missing_before, "missing_after": missing_after}
 
 @app.post("/remove-outliers")
 async def remove_outliers(file: UploadFile = File(...)):
@@ -59,7 +59,7 @@ async def remove_outliers(file: UploadFile = File(...)):
     # règle simple : revenu < 20000 et age > 0
     df_clean = df[(df["revenu"] < 20000) & (df["age"] > 0)]
     after = len(df_clean)
-    return {"lignes_avant": before, "lignes_après": after}
+    return {"rows_before": before, "rows_after": after, "removed_count": before - after}
 
 # @app.post("/clean-all")
 # async def clean_all(file: UploadFile = File(...)):
