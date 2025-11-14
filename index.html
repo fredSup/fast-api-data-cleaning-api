@@ -1,190 +1,305 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>API de Nettoyage de Données</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f4f7f6;
-            color: #333;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: #fff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-        h1 {
-            color: #007bff;
-            border-bottom: 2px solid #007bff;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
-        .operation {
-            border: 1px solid #ddd;
-            padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 5px;
-            background-color: #f9f9f9;
-        }
-        .operation h2 {
-            margin-top: 0;
-            color: #555;
-            font-size: 1.2em;
-        }
-        input[type="file"], button {
-            padding: 10px;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-            cursor: pointer;
-        }
-        button {
-            background-color: #28a745;
-            color: white;
-            border: none;
-            margin-left: 10px;
-            transition: background-color 0.3s;
-        }
-        button:hover {
-            background-color: #218838;
-        }
-        #message {
-            margin-top: 20px;
-            padding: 10px;
-            border-radius: 5px;
-            display: none;
-        }
-        .success {
-            background-color: #d4edda;
-            color: #155724;
-            border-color: #c3e6cb;
-        }
-        .error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border-color: #f5c6cb;
-        }
-        .loading {
-            background-color: #fff3cd;
-            color: #856404;
-            border-color: #ffeeba;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API de Nettoyage de Données</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f4f7f6;
+      color: #333;
+    }
+    .container {
+      max-width: 850px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      color: #007bff;
+      border-bottom: 2px solid #007bff;
+      padding-bottom: 10px;
+      margin-bottom: 25px;
+    }
+    .operation {
+      border: 1px solid #ddd;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 5px;
+      background-color: #f9f9f9;
+    }
+    .operation h2 {
+      margin-top: 0;
+      color: #555;
+      font-size: 1.2em;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 5px;
+    }
+    select,
+    input[type="file"],
+    input[type="number"],
+    button {
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+      width: 100%;
+    }
+    button {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      width: auto;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #218838;
+    }
+    #message {
+      margin-top: 20px;
+      padding: 10px;
+      border-radius: 5px;
+      display: none;
+    }
+    .success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    .error {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    .loading {
+      background-color: #fff3cd;
+      color: #856404;
+    }
+  </style>
 </head>
+
 <body>
+  <div class="container">
+    <h1>🧹 API de Nettoyage de Données </h1>
 
-    <div class="container">
-        <h1>API de Nettoyage de Données CSV (Data Cleaning)</h1>
-        
-        <div style="margin-bottom: 25px;">
-            <label for="csvFile">Sélectionnez le fichier CSV :</label>
-            <input type="file" id="csvFile" accept=".csv">
-        </div>
-
-        <div id="message"></div>
-
-        <div class="operation">
-            <h2>1. Déduplication (Statistiques JSON)</h2>
-            <p>Supprime les lignes dupliquées et retourne le nombre de lignes avant/après.</p>
-            <button onclick="cleanData('/deduplicate', 'json')">Exécuter DÉDUPLICATION</button>
-        </div>
-
-        <div class="operation">
-            <h2>2. Imputation des Manquants (Statistiques JSON)</h2>
-            <p>Remplace les valeurs manquantes numériques par la médiane (retourne le décompte).</p>
-            <button onclick="cleanData('/fill-missing', 'json')">Exécuter IMPUTATION</button>
-        </div>
-
-        <div class="operation">
-            <h2>3. Suppression des Aberrants (Statistiques JSON)</h2>
-            <p>Applique la règle `revenu < 20000` et `age > 0`.</p>
-            <button onclick="cleanData('/remove-outliers', 'json')">Exécuter ABERRANTS</button>
-        </div>
-
-        <div class="operation" style="background-color: #e6f7ff; border-color: #b3d9ff;">
-            <h2>4. NETTOYAGE COMPLET (CSV TÉLÉCHARGEMENT)</h2>
-            <p>Effectue toutes les étapes (Déduplication -> Imputation -> Aberrants) et vous **téléchargez** le fichier corrigé.</p>
-            <button onclick="cleanData('/clean-all-and-download', 'csv')" style="background-color: #007bff;">Exécuter TOUT & TÉLÉCHARGER</button>
-        </div>
-        
+    <!-- Upload -->
+    <div style="margin-bottom: 25px;">
+      <label for="csvFile">Sélectionnez un fichier CSV, Excel, .Parquet, Json :</label>
+      <input type="file" id="csvFile" accept=".csv" />
     </div>
 
-    <script>
-        // *** REMPLACER CETTE URL PAR L'URL PUBLIQUE DE VOTRE API RENDER ***
-        const API_BASE_URL = 'https://fast-api-data-cleaning-api.onrender.com'; 
-        // ***************************************************************
+    <div id="message"></div>
 
-        const messageDiv = document.getElementById('message');
-        const fileInput = document.getElementById('csvFile');
+    <!-- === 1️⃣ Déduplication === -->
+    <div class="operation">
+      <h2>1️⃣ Déduplication</h2>
+      <p>Supprime les lignes dupliquées dans votre fichier.</p>
+      <button onclick="cleanData('/deduplicate', { type: 'dedup' })">Exécuter & Télécharger</button>
+    </div>
 
-        function showMessage(text, type) {
-            messageDiv.textContent = text;
-            messageDiv.className = type;
-            messageDiv.style.display = 'block';
+    <!-- === 2️⃣ Valeurs Manquantes === -->
+    <div class="operation">
+      <h2>2️⃣ Valeurs Manquantes</h2>
+      <label for="missingMethod">Méthode :</label>
+      <select id="missingMethod">
+        <option value="median">Médiane</option>
+        <option value="mean">Moyenne</option>
+        <!-- <option value="constant">Constante</option> -->
+        <option value="null">Null</option>
+      </select>
+      <div id="constantInput" style="display:none;">
+        <label for="missingValue">Valeur constante :</label>
+        <input type="number" id="missingValue" placeholder="Entrez une valeur..." />
+      </div>
+      <button onclick="cleanData('/fill-missing', { type: 'missing' })">Exécuter & Télécharger</button>
+    </div>
+
+    <!-- === 3️⃣ Valeurs Aberrantes === -->
+    <div class="operation">
+      <h2>3️⃣ Valeurs Aberrantes</h2>
+      <label for="outlierMethod">Méthode :</label>
+      <select id="outlierMethod">
+        <option value="delete">Supprimer</option>
+        <option value="mean">Remplacer par la Moyenne</option>
+        <option value="median">Remplacer par la Médiane</option>
+      </select>
+
+      <label for="columnsSelect">Colonnes à traiter :</label>
+      <select id="columnsSelect" multiple style="height:100px;"></select>
+      <button type="button" onclick="loadColumns('columnsSelect')">Charger colonnes</button>
+
+      <label style="margin-top:10px;">
+        <input type="checkbox" id="useCustomBounds" /> Utiliser mes bornes personnalisées
+      </label>
+      <div id="customBoundsDiv" style="display:none;">
+        <input type="number" id="lowerBound" placeholder="Borne inférieure" />
+        <input type="number" id="upperBound" placeholder="Borne supérieure" />
+      </div>
+
+      <button onclick="cleanData('/remove-outliers', { type: 'outlier' })">Exécuter & Télécharger</button>
+    </div>
+
+    <!-- === 4️⃣ Nettoyage Complet === -->
+    <div class="operation">
+      <h2>4️⃣ Nettoyage Complet</h2>
+      <p>Effectue toutes les étapes (doublons, valeurs manquantes et aberrantes).</p>
+
+      <label for="missingMethodAll">Méthode valeurs manquantes :</label>
+      <select id="missingMethodAll">
+        <option value="median">Médiane</option>
+        <option value="mean">Moyenne</option>
+        <!-- <option value="constant">Constante</option> -->
+        <option value="null">Null</option>
+      </select>
+
+      <div id="constantInputAll" style="display:none;">
+        <label for="missingValueAll">Valeur constante :</label>
+        <input type="number" id="missingValueAll" placeholder="Entrez une valeur..." />
+      </div>
+
+      <label for="outlierMethodAll">Méthode valeurs aberrantes :</label>
+      <select id="outlierMethodAll">
+        <option value="delete">Supprimer</option>
+        <option value="mean">Remplacer par la Moyenne</option>
+        <option value="median">Remplacer par la Médiane</option>
+      </select>
+
+      <label for="columnsSelectAll">Colonnes à traiter :</label>
+      <select id="columnsSelectAll" multiple style="height:100px;"></select>
+      <button type="button" onclick="loadColumns('columnsSelectAll')">Charger colonnes</button>
+
+      <label>
+        <input type="checkbox" id="useCustomBoundsAll" /> Utiliser mes bornes personnalisées
+      </label>
+
+      <div id="customBoundsDivAll" style="display:none;">
+        <input type="number" id="lowerBoundAll" placeholder="Borne inférieure" />
+        <input type="number" id="upperBoundAll" placeholder="Borne supérieure" />
+      </div>
+
+      <button onclick="cleanData('/clean-all-and-download', { type: 'all' })">
+        Exécuter & Télécharger le Nettoyage Complet
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE_URL = "http://127.0.0.1:8000";
+    const messageDiv = document.getElementById("message");
+    const fileInput = document.getElementById("csvFile");
+
+    function showMessage(text, type) {
+      messageDiv.textContent = text;
+      messageDiv.className = type;
+      messageDiv.style.display = "block";
+    }
+
+    // === Gestion affichage champ constante / bornes ===
+    document.getElementById("missingMethod").addEventListener("change", e => {
+      document.getElementById("constantInput").style.display =
+        e.target.value === "constant" ? "block" : "none";
+    });
+    document.getElementById("missingMethodAll").addEventListener("change", e => {
+      document.getElementById("constantInputAll").style.display =
+        e.target.value === "constant" ? "block" : "none";
+    });
+    document.getElementById("useCustomBounds").addEventListener("change", e => {
+      document.getElementById("customBoundsDiv").style.display = e.target.checked ? "block" : "none";
+    });
+    document.getElementById("useCustomBoundsAll").addEventListener("change", e => {
+      document.getElementById("customBoundsDivAll").style.display = e.target.checked ? "block" : "none";
+    });
+
+    // === Charger les colonnes ===
+    async function loadColumns(selectId) {
+      const file = fileInput.files[0];
+      if (!file) return alert("Veuillez d'abord sélectionner un fichier.");
+      const formData = new FormData();
+      formData.append("file", file);
+      try {
+        const res = await fetch(`${API_BASE_URL}/get-numeric-columns`, { method: "POST", body: formData });
+        const data = await res.json();
+        if (data.error) return alert(data.error);
+        const select = document.getElementById(selectId);
+        select.innerHTML = "";
+        data.numeric_columns.forEach(col => {
+          const opt = document.createElement("option");
+          opt.value = col;
+          opt.textContent = col;
+          select.appendChild(opt);
+        });
+      } catch (e) {
+        alert("Erreur lors du chargement des colonnes : " + e.message);
+      }
+    }
+
+    // === Fonction principale ===
+    async function cleanData(endpoint, options = {}) {
+      const file = fileInput.files[0];
+      if (!file) return showMessage("Veuillez sélectionner un fichier.", "error");
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      if (options.type === "missing") {
+        const method = document.getElementById("missingMethod").value;
+        formData.append("method", method);
+        if (method === "constant") {
+          formData.append("value", document.getElementById("missingValue").value || 0);
         }
+      }
 
-        async function cleanData(endpoint, responseType) {
-            const file = fileInput.files[0];
-
-            if (!file) {
-                showMessage("Veuillez sélectionner un fichier CSV avant d'exécuter l'opération.", 'error');
-                return;
-            }
-
-            showMessage("Traitement en cours...", 'loading');
-
-            const formData = new FormData();
-            formData.append('file', file); // 'file' est le nom du paramètre attendu par FastAPI
-
-            const fullUrl = API_BASE_URL + endpoint;
-
-            try {
-                const response = await fetch(fullUrl, {
-                    method: 'POST',
-                    body: formData,
-                });
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`Erreur HTTP ${response.status}: ${errorText}`);
-                }
-
-                // --- GESTION DES RÉPONSES ---
-                if (responseType === 'json') {
-                    // Les endpoints /deduplicate, /fill-missing, /remove-outliers renvoient du JSON
-                    const data = await response.json();
-                    let formattedData = JSON.stringify(data, null, 2);
-                    
-                    showMessage(`Opération réussie. Résultat JSON: ${formattedData}`, 'success');
-
-                } else if (responseType === 'csv') {
-                    // L'endpoint /clean-all-and-download renvoie le fichier CSV
-                    const blob = await response.blob();
-                    
-                    // Création d'un lien pour forcer le téléchargement
-                    const downloadUrl = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = downloadUrl;
-                    a.download = 'fichier_nettoye.csv';
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
-                    window.URL.revokeObjectURL(downloadUrl);
-                    
-                    showMessage("Nettoyage COMPLET terminé ! Le fichier CSV corrigé a été téléchargé. (Vérifiez votre dossier de téléchargement)", 'success');
-                }
-
-            } catch (error) {
-                console.error('Erreur lors de l\'appel API:', error);
-                showMessage(`Erreur lors de l'appel API: ${error.message}`, 'error');
-            }
+      if (options.type === "outlier") {
+        const method = document.getElementById("outlierMethod").value;
+        const selectedCols = Array.from(document.getElementById("columnsSelect").selectedOptions).map(o => o.value);
+        formData.append("method", method);
+        formData.append("columns", JSON.stringify(selectedCols));
+        const useCustom = document.getElementById("useCustomBounds").checked;
+        formData.append("use_custom_bounds", useCustom);
+        if (useCustom) {
+          formData.append("lower_bound", document.getElementById("lowerBound").value);
+          formData.append("upper_bound", document.getElementById("upperBound").value);
         }
-    </script>
+      }
 
+      if (options.type === "all") {
+        formData.append("missing_method", document.getElementById("missingMethodAll").value);
+        formData.append("missing_value", document.getElementById("missingValueAll").value);
+        formData.append("outlier_method", document.getElementById("outlierMethodAll").value);
+        const selectedCols = Array.from(document.getElementById("columnsSelectAll").selectedOptions).map(o => o.value);
+        formData.append("columns", JSON.stringify(selectedCols));
+        const useCustom = document.getElementById("useCustomBoundsAll").checked;
+        formData.append("use_custom_bounds", useCustom);
+        if (useCustom) {
+          formData.append("lower_bound", document.getElementById("lowerBoundAll").value);
+          formData.append("upper_bound", document.getElementById("upperBoundAll").value);
+        }
+      }
+
+      showMessage("⏳ Traitement en cours...", "loading");
+
+      try {
+        const res = await fetch(API_BASE_URL + endpoint, { method: "POST", body: formData });
+        if (!res.ok) throw new Error(`Erreur HTTP ${res.status}`);
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "fichier_nettoye.xlsx";
+        a.click();
+        window.URL.revokeObjectURL(url);
+        showMessage("✅ Fichier nettoyé et téléchargé avec succès !", "success");
+      } catch (e) {
+        showMessage("❌ Erreur : " + e.message, "error");
+      }
+    }
+  </script>
 </body>
 </html>
