@@ -1,23 +1,56 @@
 # 🧹 Data Cleaning API
 
-Une API REST (FastAPI) pour nettoyer des données tabulaires (CSV) :
-- Supprimer les doublons
-- Gérer les valeurs manquantes
-- Supprimer les valeurs aberrantes
-- Appliquer un nettoyage complet
+Une API REST (FastAPI) pour nettoyer des données tabulaires (CSV, Excel, Parquet, JSON) en appliquant des règles de nettoyage standard.
+
+---
 
 ## 🚀 Fonctionnalités
-- **/deduplicate** → supprime les doublons
-- **/fill-missing** → remplace les valeurs manquantes par la médiane
-- **/remove-outliers** → enlève les valeurs aberrantes (revenu trop élevé, âge négatif)
-- **/clean-all** → applique toutes les règles
 
-## 📊 Exemple de données brutes
-```csv
-id,nom,age,revenu
-1,Dupont,25,3500
-2,Martin,,4200
-2,Martin,,4200
-3,Durand,-5,1000000
-4,Moreau,30,
-5,Dupuis,40,18000
+L’API propose plusieurs endpoints pour le traitement des données :
+
+| Endpoint               |    Description |
+|----------|-------------|
+| `/deduplicate`         | Supprime les doublons dans le fichier. |
+| `/fill-missing`        | Remplace les valeurs manquantes par la médiane, la moyenne, une constante ou `NULL`. |
+| `/remove-outliers`     | Traite les valeurs aberrantes selon des bornes calculées automatiquement ou personnalisées, en supprimant ou remplaçant les valeurs. |
+| `/clean-all-and-download` | Applique **toutes les étapes** (normalisation, suppression de doublons, valeurs manquantes, outliers) et renvoie un fichier nettoyé. |
+| `/get-numeric-columns` | Renvoie la liste des colonnes numériques disponibles dans le fichier. |
+
+---
+
+## 📦 Installation
+
+1. Cloner le dépôt :
+```bash
+git clone https://github.com/fredsup/fast-api-data-cleaning-api.git
+cd fast-api-data-cleaning-api
+
+python -m venv venv
+source venv/bin/activate   # Linux / macOS
+venv\Scripts\activate      # Windows
+
+# Telecharger les dependances
+pip install -r requirements.txt
+
+## Serveur 
+uvicorn main:app --reload
+
+
+##Exemple de données d’entrée
+id,nom,age,revenu,date_naissance,ville
+1,Alice,25,1800000000000,12/03/1998,Paris
+2,Bob,35,,1985-05-07,Londres
+3,Charlie,,,-5,07-08-1980,Marseille
+4,David,40,500,1980/07/08,Lille
+5,Eve,22,9000,2001-09-01,Paris
+
+
+##Dépendances
+Python >= 3.10
+FastAPI
+pandas
+numpy
+unidecode
+openpyxl
+xlsxwriter
+
