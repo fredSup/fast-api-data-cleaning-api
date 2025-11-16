@@ -10,47 +10,83 @@ router = APIRouter()
 
 def normalize_for_duplicates(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Normalise les données pour améliorer la détection des doublons.
-    - Nettoie les espaces
-    - Uniformise la casse
-    - Supprime les accents
-    - Normalise les dates
-    - Convertit les nombres mal formatés
-    - Nettoie les colonnes d'adresse
+    Version PRO adaptée : normalise le texte, les dates et les nombres,
+    mais conserve les colonnes Email et Message intactes pour éviter de les casser.
     """
     df_norm = df.copy()
 
+    # Colonnes à ne pas toucher
+    protected_cols = ["E-mail", "Message"]
+
+    # ---------- FONCTIONS INTERNES ----------
+
+    def clean_text(x):
+        if pd.isna(x):
+            return ""
+        x = str(x).strip()
+        x = unidecode.unidecode(x)  # enlever les accents
+        x = re.sub(r"\s+", " ", x)  # espaces multiples → 1
+        x = x.lower()
+        x = re.sub(r"[^a-z0-9\s\-/]", "", x)  # garder lettres, chiffres, -, /
+        return x
+
+    def parse_date(x):
+        if pd.isna(x):
+            return None
+        x = str(x).strip()
+        for fmt in ["%d/%m/%Y", "%Y/%m/%d", "%d-%m-%Y", "%Y-%m-%d",
+                    "%d.%m.%Y", "%Y.%m.%d", "%d%m%Y", "%Y%m%d"]:
+            try:
+                return pd.to_datetime(x, format=fmt, errors="raise")
+            except:
+                continue
+        try:
+            return pd.to_datetime(x, dayfirst=True, errors='coerce')
+        except:
+            return None
+
+    def parse_number(x):
+        if pd.isna(x):
+            return None
+        x = str(x).strip().replace(" ", "")
+        if "," in x and "." not in x:
+            x = x.replace(",", ".")
+        elif x.count(",") > 1:
+            x = x.replace(",", "")
+        x = re.sub(r"[^\d\.-]", "", x)
+        try:
+            return float(x)
+        except:
+            return None
+
+    # ---------- TRAITEMENT COLONNES ----------
     for col in df_norm.columns:
-        if pd.api.types.is_string_dtype(df_norm[col]):
-            # Nettoyage général
-            df_norm[col] = df_norm[col].astype(str).str.strip()
-            df_norm[col] = df_norm[col].str.replace(r'\s+', ' ', regex=True)
-            df_norm[col] = df_norm[col].str.lower()
-            df_norm[col] = df_norm[col].apply(unidecode.unidecode)
-            df_norm[col] = df_norm[col].str.replace(r'[^a-z0-9\s]', '', regex=True)
 
-             # Normalisation des dates
-        if "date" in col.lower():
-            def parse_date(x):
-                try:
-                    return pd.to_datetime(x, dayfirst=True, errors='coerce')
-                except:
-                    return pd.NaT
+        # Ignorer les colonnes protégées
+        if col in protected_cols:
+            continue
 
+        # Colonnes texte
+        if df_norm[col].dtype == object:
+            df_norm[col] = df_norm[col].apply(clean_text)
+
+        # Colonnes date
+        if "date" in col.lower() or "birth" in col.lower() or "nais" in col.lower():
             df_norm[col] = df_norm[col].apply(parse_date)
-            # Ensuite, formater uniformément et remplacer NaT par "NULL"
             df_norm[col] = df_norm[col].dt.strftime("%Y-%m-%d")
             df_norm[col] = df_norm[col].fillna("NULL")
-            
-            
-        # Conversion des nombres mal formatés
-        elif pd.api.types.is_numeric_dtype(df_norm[col]):
-            df_norm[col] = pd.to_numeric(df_norm[col], errors='coerce')
+            continue
 
-        # Remplacer les chaînes vides par NaN
-        else:
-            df_norm[col] = df_norm[col].replace(r'^\s*$', pd.NA, regex=True)
+        # Colonnes numériques
+        if pd.api.types.is_numeric_dtype(df_norm[col]):
+            df_norm[col] = pd.to_numeric(df_norm[col], errors="coerce")
+            continue
+
+        # Colonnes mixtes (texte + chiffres)
+        if df_norm[col].dtype == object:
+            df_norm[col] = df_norm[col].apply(clean_text)
     return df_norm
+
 
 @router.post("/deduplicate")
 async def deduplicate(file: UploadFile = File(...)):
